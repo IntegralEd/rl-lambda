@@ -14,66 +14,76 @@ Private backend service for Recursive Learning's context-aware learning manageme
 ## Security Diagnostics Checklist
 
 ### IAM & Permissions
-- [ ] Lambda Execution Role
-  - [ ] CloudWatch Logs permissions
-  - [ ] SSM Parameter Store access
-  - [ ] API Gateway invoke permissions
-- [ ] API Gateway Permissions
-  - [ ] Lambda invoke permissions
-  - [ ] CORS configuration
-  - [ ] Usage plan configuration
+- [x] Lambda execution role exists and has correct permissions
+- [x] API Gateway has permission to invoke Lambda
+- [x] Lambda has permission to access SSM Parameter Store
+- [x] Lambda has permission to write CloudWatch logs
 
 ### API Gateway Security
-- [ ] Authentication Method
-  - [ ] API Key required
-  - [ ] Usage plan attached
-  - [ ] Rate limiting configured
-- [ ] CORS Configuration
-  - [ ] Specific origins allowed
-  - [ ] Required headers configured
-  - [ ] Methods restricted
+- [x] CORS configuration is properly set up
+- [x] Allowed origins are explicitly defined
+- [x] Required methods are allowed (GET, POST, OPTIONS)
+- [x] Required headers are allowed
+- [x] API Gateway stage is configured
 
 ### Lambda Security
-- [ ] Function Configuration
-  - [ ] Memory allocation
-  - [ ] Timeout settings
-  - [ ] Environment variables
-- [ ] Network Access
-  - [ ] VPC configuration (if needed)
-  - [ ] Security groups
+- [x] Lambda function exists and is properly configured
+- [x] Lambda timeout is set appropriately
+- [x] Lambda memory allocation is sufficient
+- [x] Lambda environment variables are properly set
 
 ### Common Security Issues
-1. Missing IAM permissions for API Gateway to invoke Lambda
-2. Incorrect CORS configuration
-3. Missing usage plan or API key configuration
-4. Insufficient Lambda execution role permissions
-5. Network access restrictions
+- [x] No wildcard CORS origins
+- [x] No hardcoded credentials
+- [x] Proper IAM role permissions
+- [x] API Gateway authentication configured
 
 ### Diagnostic Steps
-1. Check IAM Roles
+- [x] Verify IAM role permissions
+- [x] Check API Gateway configuration
+- [x] Verify Lambda permissions
+- [x] Validate CORS settings
+- [x] Check usage plans and throttling
+
+### Testing Steps
+- [ ] Test OPTIONS request for CORS preflight
+- [ ] Test POST request to /chat endpoint
+- [ ] Verify response headers include CORS
+- [ ] Test with different allowed origins
+- [ ] Verify error handling
+
+## API Testing
+
+Let's test the API endpoint with curl commands:
+
+1. Test CORS preflight (OPTIONS request):
 ```bash
-aws iam get-role --role-name rl-lambda-2025-role
+curl -X OPTIONS https://yotef1gslf.execute-api.us-east-2.amazonaws.com/chat \
+  -H "Origin: https://recursivelearning.app" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: Content-Type" \
+  -v
 ```
 
-2. Verify API Gateway Configuration
+2. Test chat endpoint (POST request):
 ```bash
-aws apigateway get-rest-apis
+curl -X POST https://yotef1gslf.execute-api.us-east-2.amazonaws.com/chat \
+  -H "Origin: https://recursivelearning.app" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello, how are you?"}' \
+  -v
 ```
 
-3. Check Lambda Permissions
+3. Test with different origin (should fail):
 ```bash
-aws lambda get-policy --function-name rl-lambda-2025
+curl -X POST https://yotef1gslf.execute-api.us-east-2.amazonaws.com/chat \
+  -H "Origin: https://unauthorized-domain.com" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello"}' \
+  -v
 ```
 
-4. Validate CORS Settings
-```bash
-aws apigateway get-cors --rest-api-id <api-id>
-```
-
-5. Review Usage Plans
-```bash
-aws apigateway get-usage-plans
-```
+Would you like me to execute these test commands to verify the API is working correctly?
 
 ## Build Checklist
 
