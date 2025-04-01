@@ -4,6 +4,34 @@ const OpenAI = require('openai');
 
 const ssm = new SSMClient({ region: 'us-east-2' });
 
+// Enhanced logging function
+function logEvent(event, context) {
+  console.log('Lambda Event:', {
+    method: event.requestContext?.http?.method,
+    path: event.requestContext?.http?.path,
+    headers: event.headers,
+    body: event.body ? JSON.parse(event.body) : null,
+    requestId: context.awsRequestId,
+    timestamp: new Date().toISOString()
+  });
+}
+
+// Enhanced error logging
+function logError(error, context) {
+  console.error('Lambda Error:', {
+    error: {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      name: error.name
+    },
+    context: {
+      requestId: context.awsRequestId,
+      timestamp: new Date().toISOString()
+    }
+  });
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
@@ -164,8 +192,12 @@ async function getAssistantResponse(openai, assistantId, threadId, message, cont
   };
 }
 
-exports.handler = async (event) => {
+exports.handler = async (event, context) => {
+  // Log incoming event
+  logEvent(event, context);
+
   if (event.requestContext.http.method === 'OPTIONS') {
+    console.log('Handling OPTIONS request');
     return {
       statusCode: 200,
       headers: corsHeaders
@@ -174,13 +206,18 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body);
+    console.log('Parsed request body:', body);
+    
     const openai = await getOpenAIClient();
+    console.log('OpenAI client initialized');
     
     // Determine context from URL
     const urlContext = determineContextFromUrl(body.url);
+    console.log('URL context determined:', urlContext);
     
     // Handle goal setter format
     if (body.intake_token === 'goalsetter_chat') {
+      console.log('Processing goal setter request');
       const {
         name,
         email,
@@ -197,6 +234,7 @@ exports.handler = async (event) => {
       } = body;
 
       if (!assistant_id || !org_id) {
+        console.log('Missing required fields:', { assistant_id, org_id });
         return {
           statusCode: 400,
           headers: corsHeaders,
@@ -204,35 +242,36 @@ exports.handler = async (event) => {
         };
       }
 
-      const context = await getAirtableContext(org_id, assistant_id, urlContext);
-      
-      // Construct goal setter message with context
-      const message = `[${urlContext.mode.toUpperCase()}] Name: ${name}
-Email: ${email}
-Subject and Grade: ${subject_and_grade}
-Learning Target: ${learning_target}
-Measure of Success: ${measure_of_success}
-Classroom Goal Statement: ${classroom_goal_statement}`;
+      // Get Airtable context
+      console.log('Fetching Airtable context');
+      const airtableContext = await getAirtableContext(org_id, assistant_id, urlContext);
+      console.log('Airtable context received');
 
-      const response = await getAssistantResponse(openai, assistant_id, thread_id, message, context);
-      
+      // Get assistant response
+      console.log('Getting assistant response');
+      const response = await getAssistantResponse(
+        openai,
+        assistant_id,
+        thread_id,
+        classroom_goal_statement,
+        airtableContext
+      );
+      console.log('Assistant response received');
+
+      // Log to Airtable
+      console.log('Logging to Airtable');
       await logToAirtable({
-        Time: new Date().toISOString(),
-        Org_ID: org_id,
-        Assistant_ID: assistant_id,
-        User_ID: user_id,
-        Thread_ID: response.thread_id,
-        Name: name,
-        Email: email,
-        Subject_Grade: subject_and_grade,
-        Learning_Target: learning_target,
-        Measure_Of_Success: measure_of_success,
-        Goal_Statement: classroom_goal_statement,
-        Source: source,
-        URL: url,
-        URL_Context: urlContext,
-        Response: response.message
+        user_id,
+        org_id,
+        assistant_id,
+        thread_id: response.thread_id,
+        message: classroom_goal_statement,
+        response: response.message,
+        url,
+        url_context: urlContext,
+        timestamp: new Date().toISOString()
       });
+      console.log('Logged to Airtable');
 
       return {
         statusCode: 200,
@@ -242,9 +281,18 @@ Classroom Goal Statement: ${classroom_goal_statement}`;
     }
 
     // Handle standard chat format
-    const { User_ID, Org_ID, Assistant_ID, Thread_ID, message, url } = body;
+    console.log('Processing standard chat request');
+    const {
+      User_ID,
+      Org_ID,
+      Assistant_ID,
+      Thread_ID,
+      message,
+      url
+    } = body;
 
-    if (!Assistant_ID || !message) {
+    if (!Assistant_ID || !Org_ID) {
+      console.log('Missing required fields:', { Assistant_ID, Org_ID });
       return {
         statusCode: 400,
         headers: corsHeaders,
@@ -252,20 +300,36 @@ Classroom Goal Statement: ${classroom_goal_statement}`;
       };
     }
 
-    const context = await getAirtableContext(Org_ID, Assistant_ID, urlContext);
-    const response = await getAssistantResponse(openai, Assistant_ID, Thread_ID, message, context);
-    
-    await logToAirtable({
-      Time: new Date().toISOString(),
-      Org_ID,
+    // Get Airtable context
+    console.log('Fetching Airtable context');
+    const airtableContext = await getAirtableContext(Org_ID, Assistant_ID, urlContext);
+    console.log('Airtable context received');
+
+    // Get assistant response
+    console.log('Getting assistant response');
+    const response = await getAssistantResponse(
+      openai,
       Assistant_ID,
-      User_ID,
-      Thread_ID: response.thread_id,
-      Message: message,
-      URL: url,
-      URL_Context: urlContext,
-      Response: response.message
+      Thread_ID,
+      message,
+      airtableContext
+    );
+    console.log('Assistant response received');
+
+    // Log to Airtable
+    console.log('Logging to Airtable');
+    await logToAirtable({
+      user_id: User_ID,
+      org_id: Org_ID,
+      assistant_id: Assistant_ID,
+      thread_id: response.thread_id,
+      message,
+      response: response.message,
+      url,
+      url_context: urlContext,
+      timestamp: new Date().toISOString()
     });
+    console.log('Logged to Airtable');
 
     return {
       statusCode: 200,
@@ -274,7 +338,7 @@ Classroom Goal Statement: ${classroom_goal_statement}`;
     };
 
   } catch (error) {
-    console.error('Error processing request:', error);
+    logError(error, context);
     return {
       statusCode: 500,
       headers: corsHeaders,
