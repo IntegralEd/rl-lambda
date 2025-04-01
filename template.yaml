@@ -24,6 +24,7 @@ Globals:
       Service: chat-backend
 
 Resources:
+  # 1. API Gateway Configuration
   RecursiveLearningApi:
     Type: AWS::ApiGatewayV2::Api
     Properties:
@@ -48,7 +49,9 @@ Resources:
     Properties:
       ApiId: !Ref RecursiveLearningApi
       StageName: $default
+      AutoDeploy: true
 
+  # 2. Lambda Function
   rllambda2025Chat:
     Type: AWS::Serverless::Function
     Properties:
@@ -61,6 +64,16 @@ Resources:
             ParameterName: integraled/central/*
         - CloudWatchLogsFullAccess
 
+  # 3. Lambda Permission
+  rllambda2025ChatAPIPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref rllambda2025Chat
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/*/chat
+
+  # 4. POST Integration (AWS_PROXY)
   ChatIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -70,6 +83,7 @@ Resources:
       IntegrationUri: !GetAtt rllambda2025Chat.Arn
       PayloadFormatVersion: 2.0
 
+  # 5. OPTIONS Integration (MOCK)
   ChatOptionsIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -83,6 +97,7 @@ Resources:
         method.response.header.Access-Control-Allow-Origin: {"value": "https://recursivelearning.app"}
         method.response.header.Access-Control-Max-Age: {"value": "300"}
 
+  # 6. Routes
   ChatRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -90,7 +105,7 @@ Resources:
       RouteKey: POST /chat
       Target: !Join 
         - /
-        - - integrations/
+        - - integrations
           - !Ref ChatIntegration
 
   ChatOptionsRoute:
@@ -100,16 +115,8 @@ Resources:
       RouteKey: OPTIONS /chat
       Target: !Join 
         - /
-        - - integrations/
+        - - integrations
           - !Ref ChatOptionsIntegration
-
-  rllambda2025ChatAPIPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref rllambda2025Chat
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/*/chat
 
 Outputs:
   ApiEndpoint:

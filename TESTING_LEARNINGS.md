@@ -413,3 +413,99 @@ The correct format might require:
 3. Added monitoring setup
 4. Included success criteria
 5. Added troubleshooting guide 
+
+## Key Insight: MOCK Integration Purpose
+1. MOCK Integration's True Purpose:
+   - Designed for static responses
+   - Perfect for OPTIONS/preflight handling
+   - No Lambda invocation needed
+   - Cost-effective for CORS preflight
+   - Completely separate from actual endpoint logic
+
+2. Separation of Concerns:
+   - MOCK integration handles preflight (OPTIONS)
+   - AWS_PROXY integration handles actual requests (POST)
+   - No need for preflight to touch Lambda
+   - Keeps CORS and business logic separate
+
+3. Benefits of This Approach:
+   - Reduces Lambda costs (no OPTIONS invocations)
+   - Simplifies deployment (fewer dependencies)
+   - Faster preflight responses
+   - Clearer separation of responsibilities
+
+## Previous Challenges Explained
+Our circular dependency issues were partly due to mixing concerns:
+- Trying to handle CORS in both Lambda and API Gateway
+- Creating unnecessary dependencies between preflight and endpoint
+- Overcomplicating the permission model
+
+## Correct Architecture
+1. MOCK Integration (OPTIONS):
+   ```yaml
+   ChatOptionsIntegration:
+     Type: AWS::ApiGatewayV2::Integration
+     Properties:
+       IntegrationType: MOCK
+       ResponseParameters:
+         # CORS headers returned directly
+   ```
+
+2. AWS_PROXY Integration (POST):
+   ```yaml
+   ChatIntegration:
+     Type: AWS::ApiGatewayV2::Integration
+     Properties:
+       IntegrationType: AWS_PROXY
+       # Forwards to Lambda
+   ```
+
+3. Clear Separation:
+   - OPTIONS → MOCK → Static CORS Response
+   - POST → AWS_PROXY → Lambda Business Logic
+
+## Why This Works Better
+1. Reduced Complexity:
+   - Each integration type does one job
+   - No circular dependencies
+   - Clear flow of requests
+
+2. Better Performance:
+   - Preflight responses are immediate
+   - No Lambda cold starts for OPTIONS
+   - Reduced latency for CORS
+
+3. Cost Optimization:
+   - No Lambda invocations for preflight
+   - Simpler permission model
+   - Fewer AWS resources
+
+## Next Steps
+1. Deploy updated template
+2. Verify API Gateway creation
+3. Test OPTIONS request
+4. Test POST request
+5. Monitor CloudWatch logs
+
+## Why This Attempt Should Work
+1. Proven Configuration:
+   - Based on working example
+   - Follows AWS best practices
+   - Matches production requirements
+
+2. Proper Structure:
+   - Clear separation of concerns
+   - Correct integration types
+   - Proper permission model
+
+3. Enhanced Monitoring:
+   - Better logging
+   - Tracing enabled
+   - Metrics available
+
+## Documentation Updates
+1. Added architecture diagram
+2. Updated CORS configuration
+3. Added monitoring setup
+4. Included success criteria
+5. Added troubleshooting guide 
