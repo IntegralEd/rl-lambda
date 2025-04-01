@@ -27,18 +27,37 @@ npm install
   - `integraled/central/Airtable_API_Key`
   - `integraled/central/Airtable_Base_ID`
 
-2️⃣ Deploy Lambda
+2️⃣ SAM Template Configuration
+- [ ] Verify template.yaml settings:
+  - Function name: `rl-lambda-2025`
+  - Memory: 256MB
+  - Timeout: 180s
+  - Runtime: Node.js 18.x
+  - Architecture: ARM64
+- [ ] Check API Gateway configuration:
+  - CORS settings
+  - Endpoint path: `/chat`
+  - Method: POST
+- [ ] Validate SSM parameter permissions
+
+3️⃣ Build and Deploy
 ```bash
+# Build the application
 sam build
-sam deploy --guided  # First time
+
+# Validate the template
+sam validate
+
+# Deploy (first time)
+sam deploy --guided
 ```
-- Stack name: `rl-lambda-new`
+- Stack name: `rl-lambda-2025`
 - Region: `us-east-2`
 - Confirm changes before deploy: `Y`
 - Allow SAM CLI IAM role creation: `Y`
 - Save arguments to configuration file: `Y`
 
-3️⃣ Test Deployment
+4️⃣ Test Deployment
 Use test script from frontend repo:
 ```bash
 cd ../rl-frontend/03_reference
@@ -74,7 +93,7 @@ Initial Assistant Tests:
 }
 ```
 
-4️⃣ URL Pattern Testing
+5️⃣ URL Pattern Testing
 Test each URL pattern:
 
 StriveTogether Goal Setter:
@@ -89,7 +108,7 @@ BBH Sleep Support:
 - [ ] `sleep_review.html` - Review mode
 - [ ] `sleep.html` - Production
 
-5️⃣ Monitoring Setup
+6️⃣ Monitoring Setup
 - [ ] CloudWatch Logs enabled
 - [ ] Airtable LRS table configured
 - [ ] OpenAI usage tracking
@@ -129,17 +148,31 @@ npm install
 npm test  # TODO: Add test suite
 ```
 
-2. Deployment Package
+2. SAM Build Process
 ```bash
-zip -r function.zip index.js node_modules/
+# Clean any previous builds
+rm -rf .aws-sam
+
+# Build the application
+sam build
+
+# Validate the template
+sam validate
+
+# Deploy (first time)
+sam deploy --guided
+
+# Subsequent deployments
+sam deploy
 ```
 
-3. AWS Lambda Configuration
+3. AWS Lambda Configuration (via template.yaml)
 - Runtime: Node.js 18.x
 - Handler: index.handler
 - Region: us-east-2
 - Memory: 256MB
-- Timeout: 30s
+- Timeout: 180s
+- Architecture: ARM64
 
 ## Environment Variables (SSM Parameters)
 - `integraled/central/OpenAI_API_Key`
