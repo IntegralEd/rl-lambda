@@ -4,7 +4,7 @@
 
 ### 1. API Gateway Configuration
 - [x] Cannot use wildcards in CORS origins
-- [x] Response parameters must be JSON objects with format: `{"value": "string"}`
+- [x] Response parameters must be strings with single quotes: `'string'`
 - [x] Integration types must be properly specified (AWS_PROXY vs MOCK)
 - [x] Lambda permissions must be explicitly granted
 - [x] Stage must be created before routes
@@ -22,7 +22,7 @@
 - [x] Must include all required headers
 - [x] Must handle OPTIONS preflight requests
 - [x] Must set correct MaxAge value
-- [x] Response headers must be properly formatted JSON objects
+- [x] Response headers must be strings with single quotes
 
 ## Current Status
 - [x] Identified all failure points
@@ -152,8 +152,8 @@
 
 ## Why This Time Is Different
 1. Fixed Response Parameters Format:
-   - Previous: Used string format
-   - Now: Using proper JSON object format with "value" key
+   - Previous: Used JSON object format with "value" key
+   - Now: Using direct string values with single quotes
 
 2. Removed ResponseTemplates:
    - Previous: Included ResponseTemplates in MOCK integration
