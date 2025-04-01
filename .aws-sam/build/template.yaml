@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  RecursiveLearningFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: RecursiveLearningFunction
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+      - arm64
+      MemorySize: 256
+      Timeout: 30
+      Environment:
+        Variables:
+          REGION: us-east-2
+      Policies:
+      - SSMParameterReadPolicy:
+          ParameterName: integraled/central/*
+      Events:
+        ChatAPI:
+          Type: Api
+          Properties:
+            Path: /chat
+            Method: post
+            Auth:
+              DefaultAuthorizer: NONE
+            Cors:
+              AllowMethods: '''POST,OPTIONS'''
+              AllowHeaders: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'''
+              AllowOrigin: '''*'''
+    Metadata:
+      SamResourceId: RecursiveLearningFunction
