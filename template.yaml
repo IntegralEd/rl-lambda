@@ -1,6 +1,14 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
+Globals:
+  Api:
+    Cors:
+      AllowMethods: "'POST,OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
+      MaxAge: "'300'"
+
 Resources:
   RecursiveLearningFunction:
     Type: AWS::Serverless::Function
@@ -18,20 +26,15 @@ Resources:
           REGION: us-east-2
       Policies:
         - SSMParameterReadPolicy:
-            ParameterName: integraled/central/*
+            ParameterName: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/integraled/central/*'
       Events:
         ChatAPI:
-          Type: HttpApi
+          Type: Api
           Properties:
             Path: /chat
             Method: POST
-            Cors:
-              AllowMethods: "'POST,OPTIONS'"
-              AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-              AllowOrigin: "'*'"
-              MaxAge: "'300'"
 
 Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL
-    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/chat" 
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/chat" 
