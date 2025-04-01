@@ -30,32 +30,42 @@
 - [x] Enhanced Lambda logging
 - [ ] Ready for deployment and testing
 
-## Testing Strategy
+## Architecture Diagram Insights
 
-### Phase 1: Infrastructure Validation (Current Phase)
-1. Deploy API Gateway
-   ```bash
-   sam build && sam deploy --guided
-   ```
-   - Expected: Success
-   - Next: Check API endpoint in AWS Console
-   - Log: API ID and endpoint URL
-   - Validation: Verify API Gateway is created with correct CORS settings
+### Clear Separation of Concerns
+1. MOCK Integration (OPTIONS):
+   - Handles CORS preflight exclusively
+   - No Lambda invocation needed
+   - Static response with CORS headers
+   - Cost-effective and fast
 
-2. Verify Lambda Integration
-   - Expected: Success
-   - Next: Verify Lambda permissions
-   - Log: Lambda ARN and permissions
-   - Validation: Check Lambda function exists and has correct permissions
+2. AWS_PROXY Integration (POST):
+   - Handles actual chat requests
+   - Forwards to Lambda for processing
+   - Manages business logic
+   - Handles secrets and external APIs
 
-3. Verify CORS Configuration
-   - Expected: Success
-   - Next: Test OPTIONS request
-   - Log: CORS headers in response
-   - Validation: Confirm CORS settings in API Gateway console
+## Testing Strategy Revision
+1. Phase 1: CORS Preflight (MOCK)
+   - Test OPTIONS request first
+   - Verify CORS headers
+   - No Lambda involvement
+   - Expected: 200 OK with headers
 
-### Phase 2: Endpoint Testing (Next Phase)
-1. Test OPTIONS Request
+2. Phase 2: Chat Endpoint (AWS_PROXY)
+   - Test POST request
+   - Verify Lambda integration
+   - Check response format
+   - Expected: 200 OK with message
+
+3. Phase 3: Error Cases
+   - Test invalid origins
+   - Test missing fields
+   - Verify error responses
+   - Expected: Appropriate error codes
+
+### Next Test Queue
+1. OPTIONS Request Test:
    ```bash
    curl -X OPTIONS $API_ENDPOINT/chat \
      -H "Origin: https://recursivelearning.app" \
@@ -63,60 +73,72 @@
      -H "Access-Control-Request-Headers: Content-Type" \
      -v
    ```
-   - Expected: 200 OK with CORS headers
-   - Next: Test POST request
-   - Log: Response headers and status
-   - Validation: Check CloudWatch logs for request/response
+   Expected:
+   - Status: 200 OK
+   - Headers:
+     ```
+     Access-Control-Allow-Origin: https://recursivelearning.app
+     Access-Control-Allow-Methods: POST,OPTIONS
+     Access-Control-Allow-Headers: Content-Type,Authorization
+     Access-Control-Max-Age: 300
+     ```
 
-2. Test POST Request (Goal Setter)
+2. POST Request Test:
    ```bash
    curl -X POST $API_ENDPOINT/chat \
      -H "Origin: https://recursivelearning.app" \
      -H "Content-Type: application/json" \
      -d '{
-       "intake_token": "goalsetter_chat",
-       "name": "Test Teacher",
-       "email": "teacher@school.edu",
-       "user_id": "test123",
-       "thread_id": "thread123",
-       "assistant_id": "asst_IA5PsJxdShVPTAv2xeXTr4Ma",
-       "subject_and_grade": "9th Grade Algebra",
-       "learning_target": "Test target",
-       "measure_of_success": "Test measure",
-       "classroom_goal_statement": "Test goal",
-       "org_id": "recsK5zK0CouK5ebW",
-       "source": "web",
-       "url": "https://recursivelearning.app/clients/st/goalsetter_live.html"
+       "User_ID": "test_user",
+       "Org_ID": "test_org",
+       "Assistant_ID": "asst_123",
+       "Thread_ID": "thread_456",
+       "Source": "goalsetter"
      }' \
      -v
    ```
-   - Expected: 200 OK with response body
-   - Next: Test error cases
-   - Log: Response body and timing
-   - Validation: Check CloudWatch logs for Lambda execution
+   Expected:
+   - Status: 200 OK
+   - Body: Assistant-generated message
 
-### Phase 3: Error Testing (Future Phase)
-1. Test Missing Fields
+3. Error Case Tests:
    ```bash
+   # Invalid Origin
+   curl -X POST $API_ENDPOINT/chat \
+     -H "Origin: https://unauthorized-domain.com" \
+     -H "Content-Type: application/json" \
+     -d '{"message": "Test"}' \
+     -v
+
+   # Missing Fields
    curl -X POST $API_ENDPOINT/chat \
      -H "Origin: https://recursivelearning.app" \
      -H "Content-Type: application/json" \
      -d '{"message": "Test"}' \
      -v
    ```
-   - Expected: 400 Bad Request
-   - Log: Error response
+   Expected:
+   - Invalid Origin: CORS error
+   - Missing Fields: 400 Bad Request
 
-2. Test Invalid Origin
-   ```bash
-   curl -X POST $API_ENDPOINT/chat \
-     -H "Origin: https://unauthorized-domain.com" \
-     -H "Content-Type: application/json" \
-     -d '{"message": "Test"}' \
-     -v
-   ```
-   - Expected: CORS error
-   - Log: Error response
+### Key Learnings from Architecture
+1. MOCK Integration Benefits:
+   - Faster preflight responses
+   - No Lambda costs for OPTIONS
+   - Simpler deployment
+   - Clear separation of concerns
+
+2. AWS_PROXY Integration Benefits:
+   - Direct Lambda integration
+   - Full request/response access
+   - Better error handling
+   - Proper logging
+
+3. Testing Improvements:
+   - Test each integration separately
+   - Verify CORS headers first
+   - Then test business logic
+   - Finally test error cases
 
 ## Success Criteria
 1. All infrastructure deployments succeed
