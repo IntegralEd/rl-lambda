@@ -169,4 +169,129 @@
 
 5. Documented Learnings:
    - Previous: No documentation of failure points
-   - Now: Comprehensive documentation of all learnings 
+   - Now: Comprehensive documentation of all learnings
+
+## Key Discoveries from Multiple Trials
+
+### API Gateway V2 Integration Formats
+1. First Attempt: Simple string format
+   ```yaml
+   ResponseParameters:
+     method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+   ```
+   - Result: Failed validation
+   - Error: Expected JSONObject, found String
+
+2. Second Attempt: JSON object with value key
+   ```yaml
+   ResponseParameters:
+     method.response.header.Access-Control-Allow-Headers: {"value": "Content-Type,Authorization"}
+   ```
+   - Result: Failed validation
+   - Error: Expected JSONObject, found String
+
+3. Third Attempt: JSON object with quoted values
+   ```yaml
+   ResponseParameters:
+     method.response.header.Access-Control-Allow-Headers: {"value": "'Content-Type,Authorization'"}
+   ```
+   - Result: Failed validation
+   - Error: Expected JSONObject, found String
+
+4. Fourth Attempt: Integration Response format
+   ```yaml
+   IntegrationResponses:
+     - StatusCode: 200
+       ResponseParameters:
+         Headers:
+           Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+   ```
+   - Result: Failed validation
+   - Error: Expected JSONObject, found String
+
+5. Current Attempt: Request Parameters format
+   ```yaml
+   RequestParameters:
+     method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+   ```
+   - Status: In progress
+
+### Critical Learnings
+1. API Gateway V2 vs V1:
+   - V2 has stricter validation requirements
+   - V2 uses different parameter formats
+   - V2 CORS handling is more complex
+
+2. CORS Configuration:
+   - Must be configured at both API and Integration levels
+   - Headers must be explicitly defined
+   - Values must be properly formatted (still determining correct format)
+
+3. Mock Integration Requirements:
+   - Cannot use ResponseTemplates
+   - Must handle CORS headers differently than AWS_PROXY
+   - Requires specific parameter structure
+
+4. Deployment Process:
+   - Each failed deployment requires manual cleanup
+   - Stack updates may require complete recreation
+   - Testing each format requires full deployment cycle
+
+## Next Steps
+1. Research API Gateway V2 Mock Integration examples
+2. Consider alternative CORS handling approaches:
+   - Using Lambda for OPTIONS requests
+   - Using API Gateway V1 instead
+   - Using custom authorizer
+3. Document successful format once found
+
+## Cleanup Strategy
+1. Before next attempt:
+   ```bash
+   aws cloudformation delete-stack --stack-name rl-lambda-2025
+   aws cloudformation wait stack-delete-complete --stack-name rl-lambda-2025
+   ```
+2. Verify resources are cleaned up:
+   - API Gateway
+   - Lambda permissions
+   - CloudWatch logs
+
+## Success Criteria Update
+1. CORS preflight must:
+   - Return 200 status
+   - Include all required headers
+   - Support all configured origins
+2. Headers must be:
+   - Properly formatted
+   - Include correct values
+   - Pass API Gateway validation
+
+## Why Previous Attempts Failed
+1. Format Mismatch:
+   - API Gateway V2 expects specific JSON structure
+   - String values not accepted directly
+   - Nested objects required for headers
+
+2. Documentation Gaps:
+   - AWS docs don't clearly specify V2 format
+   - Examples often show V1 format
+   - Community resources limited
+
+3. Validation Requirements:
+   - Stricter than V1
+   - Less forgiving of format variations
+   - More specific about object structures
+
+## Current Hypothesis
+The correct format might require:
+1. Using IntegrationResponse with specific structure
+2. Defining response models
+3. Using template mapping
+4. Or switching to Lambda-based CORS handling
+
+## Documentation Improvements
+1. Added clear format progression
+2. Documented each failure mode
+3. Added cleanup procedures
+4. Updated testing strategy
+5. Added hypothesis for next attempts 
