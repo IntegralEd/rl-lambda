@@ -11,6 +11,70 @@ Private backend service for Recursive Learning's context-aware learning manageme
 - OpenAI Assistants API integration
 - Airtable LRS logging
 
+## Security Diagnostics Checklist
+
+### IAM & Permissions
+- [ ] Lambda Execution Role
+  - [ ] CloudWatch Logs permissions
+  - [ ] SSM Parameter Store access
+  - [ ] API Gateway invoke permissions
+- [ ] API Gateway Permissions
+  - [ ] Lambda invoke permissions
+  - [ ] CORS configuration
+  - [ ] Usage plan configuration
+
+### API Gateway Security
+- [ ] Authentication Method
+  - [ ] API Key required
+  - [ ] Usage plan attached
+  - [ ] Rate limiting configured
+- [ ] CORS Configuration
+  - [ ] Specific origins allowed
+  - [ ] Required headers configured
+  - [ ] Methods restricted
+
+### Lambda Security
+- [ ] Function Configuration
+  - [ ] Memory allocation
+  - [ ] Timeout settings
+  - [ ] Environment variables
+- [ ] Network Access
+  - [ ] VPC configuration (if needed)
+  - [ ] Security groups
+
+### Common Security Issues
+1. Missing IAM permissions for API Gateway to invoke Lambda
+2. Incorrect CORS configuration
+3. Missing usage plan or API key configuration
+4. Insufficient Lambda execution role permissions
+5. Network access restrictions
+
+### Diagnostic Steps
+1. Check IAM Roles
+```bash
+aws iam get-role --role-name rl-lambda-2025-role
+```
+
+2. Verify API Gateway Configuration
+```bash
+aws apigateway get-rest-apis
+```
+
+3. Check Lambda Permissions
+```bash
+aws lambda get-policy --function-name rl-lambda-2025
+```
+
+4. Validate CORS Settings
+```bash
+aws apigateway get-cors --rest-api-id <api-id>
+```
+
+5. Review Usage Plans
+```bash
+aws apigateway get-usage-plans
+```
+
 ## Build Checklist
 
 1️⃣ Local Development Setup

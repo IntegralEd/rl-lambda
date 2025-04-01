@@ -66,8 +66,18 @@ Resources:
           - X-Api-Key
           - X-Amz-Security-Token
         AllowOrigins:
-          - '*'
+          - https://recursivelearning.app
+          - https://*.recursivelearning.app
         MaxAge: 300
+      UsagePlan:
+        CreateUsagePlan: PER_API
+        Description: Usage plan for Recursive Learning API
+        Quota:
+          Limit: 10000
+          Period: MONTH
+        Throttle:
+          BurstLimit: 100
+          RateLimit: 50
 
 Outputs:
   ApiEndpoint:
