@@ -4,42 +4,57 @@
 
 ### 1. API Gateway Configuration
 - [x] Cannot use wildcards in CORS origins
-- [x] Response parameters must be JSON objects, not strings
+- [x] Response parameters must be JSON objects with format: `{"value": "string"}`
 - [x] Integration types must be properly specified (AWS_PROXY vs MOCK)
 - [x] Lambda permissions must be explicitly granted
 - [x] Stage must be created before routes
+- [x] ResponseTemplates not allowed in MOCK integrations
 
 ### 2. Lambda Integration
 - [x] Lambda ARN must be correct and function must exist
 - [x] Lambda must have permission to be invoked by API Gateway
 - [x] Lambda timeout must be sufficient (180s)
 - [x] Lambda memory must be sufficient (256MB)
+- [x] Lambda must handle both OPTIONS and POST methods
 
 ### 3. CORS Configuration
 - [x] Must specify exact origins, no wildcards
 - [x] Must include all required headers
 - [x] Must handle OPTIONS preflight requests
 - [x] Must set correct MaxAge value
+- [x] Response headers must be properly formatted JSON objects
+
+## Current Status
+- [x] Identified all failure points
+- [x] Fixed template.yaml configuration
+- [x] Enhanced Lambda logging
+- [ ] Ready for deployment and testing
 
 ## Testing Strategy
 
-### Phase 1: Infrastructure Validation
+### Phase 1: Infrastructure Validation (Current Phase)
 1. Deploy API Gateway
+   ```bash
+   sam build && sam deploy --guided
+   ```
    - Expected: Success
    - Next: Check API endpoint in AWS Console
    - Log: API ID and endpoint URL
+   - Validation: Verify API Gateway is created with correct CORS settings
 
-2. Deploy Lambda Integration
+2. Verify Lambda Integration
    - Expected: Success
    - Next: Verify Lambda permissions
    - Log: Lambda ARN and permissions
+   - Validation: Check Lambda function exists and has correct permissions
 
-3. Deploy CORS Configuration
+3. Verify CORS Configuration
    - Expected: Success
    - Next: Test OPTIONS request
    - Log: CORS headers in response
+   - Validation: Confirm CORS settings in API Gateway console
 
-### Phase 2: Endpoint Testing
+### Phase 2: Endpoint Testing (Next Phase)
 1. Test OPTIONS Request
    ```bash
    curl -X OPTIONS $API_ENDPOINT/chat \
@@ -51,6 +66,7 @@
    - Expected: 200 OK with CORS headers
    - Next: Test POST request
    - Log: Response headers and status
+   - Validation: Check CloudWatch logs for request/response
 
 2. Test POST Request (Goal Setter)
    ```bash
@@ -77,29 +93,30 @@
    - Expected: 200 OK with response body
    - Next: Test error cases
    - Log: Response body and timing
+   - Validation: Check CloudWatch logs for Lambda execution
 
-3. Test Error Cases
-   - Missing required fields
-   - Invalid origin
-   - Invalid JSON
-   - Expected: Appropriate error responses
-   - Next: Test with different origins
-   - Log: Error messages and status codes
+### Phase 3: Error Testing (Future Phase)
+1. Test Missing Fields
+   ```bash
+   curl -X POST $API_ENDPOINT/chat \
+     -H "Origin: https://recursivelearning.app" \
+     -H "Content-Type: application/json" \
+     -d '{"message": "Test"}' \
+     -v
+   ```
+   - Expected: 400 Bad Request
+   - Log: Error response
 
-### Phase 3: Origin Testing
-1. Test Allowed Origins
-   - https://recursivelearning.app
-   - https://app.recursivelearning.app
-   - https://admin.recursivelearning.app
-   - https://api.recursivelearning.app
-   - Expected: All succeed
-   - Next: Test unauthorized origin
-   - Log: Origin-specific responses
-
-2. Test Unauthorized Origin
+2. Test Invalid Origin
+   ```bash
+   curl -X POST $API_ENDPOINT/chat \
+     -H "Origin: https://unauthorized-domain.com" \
+     -H "Content-Type: application/json" \
+     -d '{"message": "Test"}' \
+     -v
+   ```
    - Expected: CORS error
-   - Next: Final validation
-   - Log: Error details
+   - Log: Error response
 
 ## Success Criteria
 1. All infrastructure deployments succeed
@@ -108,14 +125,6 @@
 4. All allowed origins work
 5. Unauthorized origins are blocked
 6. Error cases return appropriate responses
-
-## Failure Recovery
-If any test fails:
-1. Check CloudWatch logs for Lambda errors
-2. Verify API Gateway configuration
-3. Check CORS settings
-4. Validate Lambda permissions
-5. Review request/response format
 
 ## Logging Strategy
 1. API Gateway:
@@ -135,8 +144,29 @@ If any test fails:
    - Set up alarms for errors
 
 ## Next Steps
-1. Deploy with enhanced logging
-2. Run tests in sequence
-3. Document results
-4. Address any failures
-5. Update documentation 
+1. Deploy updated template with fixed CORS configuration
+2. Verify API Gateway creation
+3. Test OPTIONS request
+4. Document results
+5. Address any failures
+
+## Why This Time Is Different
+1. Fixed Response Parameters Format:
+   - Previous: Used string format
+   - Now: Using proper JSON object format with "value" key
+
+2. Removed ResponseTemplates:
+   - Previous: Included ResponseTemplates in MOCK integration
+   - Now: Removed as not allowed in MOCK integrations
+
+3. Enhanced Logging:
+   - Previous: Basic console.log
+   - Now: Structured logging with request/response details
+
+4. Clear Testing Phases:
+   - Previous: Mixed testing approach
+   - Now: Structured phases with clear success criteria
+
+5. Documented Learnings:
+   - Previous: No documentation of failure points
+   - Now: Comprehensive documentation of all learnings 
