@@ -37,6 +37,16 @@ Resources:
         - - integrations
           - !Ref ChatIntegration
 
+  ChatOptionsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref RecursiveLearningApi
+      RouteKey: OPTIONS /chat
+      Target: !Join 
+        - /
+        - - integrations
+          - !Ref ChatOptionsIntegration
+
   ChatIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -45,6 +55,21 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationUri: arn:aws:lambda:us-east-2:559050208320:function:rl-lambda-2025
       PayloadFormatVersion: 2.0
+
+  ChatOptionsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref RecursiveLearningApi
+      Description: CORS preflight integration
+      IntegrationType: MOCK
+      PayloadFormatVersion: 2.0
+      ResponseParameters:
+        method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+        method.response.header.Access-Control-Allow-Origin: "'https://recursivelearning.app'"
+        method.response.header.Access-Control-Max-Age: "'300'"
+      ResponseTemplates:
+        application/json: '{"statusCode": 200}'
 
   rllambda2025ChatAPIPermission:
     Type: AWS::Lambda::Permission
