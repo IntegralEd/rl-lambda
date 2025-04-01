@@ -65,16 +65,10 @@ Resources:
       IntegrationType: MOCK
       PayloadFormatVersion: 2.0
       ResponseParameters:
-        method.response.header.Access-Control-Allow-Headers:
-          value: Content-Type,Authorization
-        method.response.header.Access-Control-Allow-Methods:
-          value: POST,OPTIONS
-        method.response.header.Access-Control-Allow-Origin:
-          value: https://recursivelearning.app
-        method.response.header.Access-Control-Max-Age:
-          value: '300'
-      ResponseTemplates:
-        application/json: '{"statusCode": 200}'
+        method.response.header.Access-Control-Allow-Headers: '''Content-Type,Authorization'''
+        method.response.header.Access-Control-Allow-Methods: '''POST,OPTIONS'''
+        method.response.header.Access-Control-Allow-Origin: '''https://recursivelearning.app'''
+        method.response.header.Access-Control-Max-Age: '''300'''
   rllambda2025ChatAPIPermission:
     Type: AWS::Lambda::Permission
     Properties:
