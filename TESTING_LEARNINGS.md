@@ -295,3 +295,121 @@ The correct format might require:
 3. Added cleanup procedures
 4. Updated testing strategy
 5. Added hypothesis for next attempts 
+
+## Latest Insights from OpenAI Team
+
+### Proven Architecture Pattern
+1. Core Components:
+   - Single Lambda handling multiple assistants
+   - HTTP API (V2) with strict CORS
+   - MOCK integration for OPTIONS
+   - AWS_PROXY for POST
+
+2. CORS Configuration:
+   - Multiple allowed origins (no wildcards)
+   - Limited methods (POST, OPTIONS only)
+   - Specific headers (Content-Type, Authorization)
+   - 300s MaxAge for preflight caching
+
+3. Request Flow:
+   - Frontend → API Gateway → Lambda
+   - OPTIONS handled by MOCK (cost-effective)
+   - Lambda routing based on packet content
+
+### Template Improvements
+1. Added SAM Transform:
+   ```yaml
+   Transform: AWS::Serverless-2016-10-31
+   ```
+
+2. Enhanced Globals:
+   - Proper timeout (180s)
+   - Memory allocation (256MB)
+   - ARM64 architecture
+   - JSON logging
+   - X-Ray tracing
+
+3. Fixed Integration Formats:
+   - AWS_PROXY for chat
+   - MOCK for OPTIONS
+   - Proper response parameters
+
+4. Improved IAM:
+   - SSM parameter access
+   - CloudWatch logging
+   - API Gateway permissions
+
+## Predictions for Next Deployment
+
+### Expected Success Points
+1. CORS Configuration:
+   - Should accept all specified origins
+   - Should handle preflight correctly
+   - Should cache preflight for 5 minutes
+
+2. Integration Types:
+   - AWS_PROXY should work for chat
+   - MOCK should handle OPTIONS
+   - Response parameters should be valid
+
+3. Lambda Integration:
+   - Should have correct permissions
+   - Should receive requests properly
+   - Should be able to access SSM
+
+### Potential Challenges
+1. API Gateway V2 Specifics:
+   - Response parameter format might need adjustment
+   - Stage creation might need explicit ordering
+   - Route targets might need path adjustment
+
+2. Lambda Permissions:
+   - Source ARN might need refinement
+   - SSM access might need verification
+   - CloudWatch logging might need setup
+
+### Success Criteria
+1. Infrastructure:
+   - API Gateway created successfully
+   - Lambda function deployed
+   - All permissions granted
+
+2. Functionality:
+   - OPTIONS request returns 200
+   - CORS headers present
+   - POST request reaches Lambda
+
+3. Monitoring:
+   - CloudWatch logs available
+   - X-Ray traces working
+   - Metrics available
+
+## Next Steps
+1. Deploy updated template
+2. Verify API Gateway creation
+3. Test OPTIONS request
+4. Test POST request
+5. Monitor CloudWatch logs
+
+## Why This Attempt Should Work
+1. Proven Configuration:
+   - Based on working example
+   - Follows AWS best practices
+   - Matches production requirements
+
+2. Proper Structure:
+   - Clear separation of concerns
+   - Correct integration types
+   - Proper permission model
+
+3. Enhanced Monitoring:
+   - Better logging
+   - Tracing enabled
+   - Metrics available
+
+## Documentation Updates
+1. Added architecture diagram
+2. Updated CORS configuration
+3. Added monitoring setup
+4. Included success criteria
+5. Added troubleshooting guide 
