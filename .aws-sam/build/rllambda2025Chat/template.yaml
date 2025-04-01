@@ -1,13 +1,14 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Recursive Learning Lambda Backend with CORS-enabled API Gateway
+
 Globals:
   Function:
     Timeout: 180
     MemorySize: 256
     Runtime: nodejs18.x
     Architectures:
-    - arm64
+      - arm64
     Environment:
       Variables:
         NODE_OPTIONS: --enable-source-maps
@@ -21,6 +22,7 @@ Globals:
       Project: recursive-learning
       Environment: production
       Service: chat-backend
+
 Resources:
   RecursiveLearningApi:
     Type: AWS::ApiGatewayV2::Api
@@ -29,117 +31,99 @@ Resources:
       ProtocolType: HTTP
       CorsConfiguration:
         AllowOrigins:
-        - https://recursivelearning.app
-        - https://app.recursivelearning.app
-        - https://admin.recursivelearning.app
-        - https://api.recursivelearning.app
+          - https://recursivelearning.app
+          - https://app.recursivelearning.app
+          - https://admin.recursivelearning.app
+          - https://api.recursivelearning.app
         AllowMethods:
-        - POST
-        - OPTIONS
+          - POST
+          - OPTIONS
         AllowHeaders:
-        - Content-Type
-        - Authorization
+          - Content-Type
+          - Authorization
         MaxAge: 300
+
   RecursiveLearningApiDefaultStage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
-      ApiId:
-        Ref: RecursiveLearningApi
+      ApiId: !Ref RecursiveLearningApi
       StageName: $default
+
   ChatIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
-      ApiId:
-        Ref: RecursiveLearningApi
+      ApiId: !Ref RecursiveLearningApi
       Description: Chat endpoint integration
       IntegrationType: AWS_PROXY
-      IntegrationUri:
-        Fn::GetAtt:
-        - rllambda2025Chat
-        - Arn
+      IntegrationUri: !GetAtt rllambda2025Chat.Arn
       PayloadFormatVersion: 2.0
+
   ChatOptionsIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
-      ApiId:
-        Ref: RecursiveLearningApi
+      ApiId: !Ref RecursiveLearningApi
       Description: CORS preflight integration
       IntegrationType: MOCK
       PayloadFormatVersion: 2.0
       ResponseParameters:
-        method.response.header.Access-Control-Allow-Headers:
-          value: Content-Type,Authorization
-        method.response.header.Access-Control-Allow-Methods:
-          value: POST,OPTIONS
-        method.response.header.Access-Control-Allow-Origin:
-          value: https://recursivelearning.app
-        method.response.header.Access-Control-Max-Age:
-          value: '300'
+        method.response.header.Access-Control-Allow-Headers: {"value": "Content-Type,Authorization"}
+        method.response.header.Access-Control-Allow-Methods: {"value": "POST,OPTIONS"}
+        method.response.header.Access-Control-Allow-Origin: {"value": "https://recursivelearning.app"}
+        method.response.header.Access-Control-Max-Age: {"value": "300"}
+
   ChatRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
-      ApiId:
-        Ref: RecursiveLearningApi
+      ApiId: !Ref RecursiveLearningApi
       RouteKey: POST /chat
-      Target:
-        Fn::Join:
+      Target: !Join 
         - /
         - - integrations/
-          - Ref: ChatIntegration
+          - !Ref ChatIntegration
+
   ChatOptionsRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
-      ApiId:
-        Ref: RecursiveLearningApi
+      ApiId: !Ref RecursiveLearningApi
       RouteKey: OPTIONS /chat
-      Target:
-        Fn::Join:
+      Target: !Join 
         - /
         - - integrations/
-          - Ref: ChatOptionsIntegration
+          - !Ref ChatOptionsIntegration
+
   rllambda2025Chat:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: rl-lambda-2025
       Description: Recursive Learning Chat Lambda
-      CodeUri: rllambda2025Chat
+      CodeUri: .
       Handler: index.handler
       Policies:
-      - SSMParameterReadPolicy:
-          ParameterName: integraled/central/*
-      - CloudWatchLogsFullAccess
-      - Statement:
-        - Effect: Allow
-          Action:
-          - lambda:InvokeFunction
-          Resource:
-            Fn::GetAtt:
-            - rllambda2025Chat
-            - Arn
-          Principal: apigateway.amazonaws.com
-          Condition:
-            StringEquals:
-              aws:SourceArn:
-                Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/*/chat
-    Metadata:
-      SamResourceId: rllambda2025Chat
+        - SSMParameterReadPolicy:
+            ParameterName: integraled/central/*
+        - CloudWatchLogsFullAccess
+        - Statement:
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource: !GetAtt rllambda2025Chat.Arn
+              Principal: apigateway.amazonaws.com
+              Condition:
+                StringEquals:
+                  aws:SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/*/chat
+
   rllambda2025ChatAPIPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName:
-        Ref: rllambda2025Chat
+      FunctionName: !Ref rllambda2025Chat
       Principal: apigateway.amazonaws.com
-      SourceArn:
-        Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/*/chat
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/*/chat
+
 Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL
-    Value:
-      Fn::Sub: https://${RecursiveLearningApi}.execute-api.${AWS::Region}.amazonaws.com/
+    Value: !Sub https://${RecursiveLearningApi}.execute-api.${AWS::Region}.amazonaws.com/
   LambdaArn:
     Description: Lambda function ARN
-    Value:
-      Fn::GetAtt:
-      - rllambda2025Chat
-      - Arn
+    Value: !GetAtt rllambda2025Chat.Arn 
