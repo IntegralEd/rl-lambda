@@ -17,6 +17,12 @@ const URL_PATTERNS = {
     TEMP: /\/clients\/[^\/]+\/goalsetter_temp\.html$/,
     REVIEW: /\/clients\/[^\/]+\/goalsetter_review\.html$/,
     PROD: /\/clients\/[^\/]+\/goalsetter\.html$/
+  },
+  BBH: {
+    LIVE: /\/clients\/bbh\/[^\/]+_live\.html$/,
+    TEMP: /\/clients\/bbh\/[^\/]+_temp\.html$/,
+    REVIEW: /\/clients\/bbh\/[^\/]+_review\.html$/,
+    PROD: /\/clients\/bbh\/[^\/]+\.html$/
   }
 };
 

@@ -21,6 +21,7 @@
     "@aws-sdk/client-ssm": "^3.777.0",
     "airtable": "^0.12.2",
     "axios": "^1.8.4",
-    "openai": "^4.91.0"
+    "openai": "^4.91.0",
+    "cors": "^2.8.5"
   }
 }

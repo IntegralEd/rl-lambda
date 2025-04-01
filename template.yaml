@@ -5,6 +5,7 @@ Resources:
   RecursiveLearningFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: rl-lambda-new
       CodeUri: .
       Handler: index.handler
       Runtime: nodejs18.x
@@ -26,26 +27,13 @@ Resources:
             Method: POST
             Auth:
               Authorizer: NONE
-            ApiId: !Ref RecursiveLearningApi
-
-  RecursiveLearningApi:
-    Type: AWS::Serverless::HttpApi
-    Properties:
-      CorsConfiguration:
-        AllowMethods:
-          - POST
-          - OPTIONS
-        AllowHeaders:
-          - Content-Type
-          - X-Amz-Date
-          - Authorization
-          - X-Api-Key
-          - X-Amz-Security-Token
-        AllowOrigins:
-          - '*'
-        MaxAge: 300
+            Cors:
+              AllowMethods: "'POST,OPTIONS'"
+              AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              AllowOrigin: "'*'"
+              MaxAge: "'300'"
 
 Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL
-    Value: !Sub "https://${RecursiveLearningApi}.execute-api.${AWS::Region}.amazonaws.com/chat" 
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/chat" 

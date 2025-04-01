@@ -32,7 +32,7 @@ npm install
 sam build
 sam deploy --guided  # First time
 ```
-- Stack name: `rl-lambda-prod`
+- Stack name: `rl-lambda-new`
 - Region: `us-east-2`
 - Confirm changes before deploy: `Y`
 - Allow SAM CLI IAM role creation: `Y`

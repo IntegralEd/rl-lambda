@@ -20,13 +20,32 @@ Resources:
             ParameterName: integraled/central/*
       Events:
         ChatAPI:
-          Type: Api
+          Type: HttpApi
           Properties:
             Path: /chat
-            Method: post
+            Method: POST
             Auth:
-              DefaultAuthorizer: NONE
-            Cors:
-              AllowMethods: "'POST,OPTIONS'"
-              AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-              AllowOrigin: "'*'" 
+              Authorizer: NONE
+            ApiId: !Ref RecursiveLearningApi
+
+  RecursiveLearningApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowMethods:
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - X-Amz-Date
+          - Authorization
+          - X-Api-Key
+          - X-Amz-Security-Token
+        AllowOrigins:
+          - '*'
+        MaxAge: 300
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${RecursiveLearningApi}.execute-api.${AWS::Region}.amazonaws.com/chat" 
