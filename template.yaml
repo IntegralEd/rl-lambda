@@ -60,15 +60,6 @@ Resources:
         - SSMParameterReadPolicy:
             ParameterName: integraled/central/*
         - CloudWatchLogsFullAccess
-        - Statement:
-            - Effect: Allow
-              Action:
-                - lambda:InvokeFunction
-              Resource: !GetAtt rllambda2025Chat.Arn
-              Principal: apigateway.amazonaws.com
-              Condition:
-                StringEquals:
-                  aws:SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/*/chat
 
   ChatIntegration:
     Type: AWS::ApiGatewayV2::Integration
