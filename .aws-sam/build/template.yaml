@@ -1,76 +1,89 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
-Description: An AWS Serverless Application Model template describing your function.
 Resources:
-  rllambda2025:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: rl-lambda-2025
-      CodeUri: rllambda2025
-      Description: ''
-      MemorySize: 256
-      Timeout: 180
-      Handler: index.handler
-      Runtime: nodejs18.x
-      Architectures:
-      - arm64
-      EphemeralStorage:
-        Size: 512
-      EventInvokeConfig:
-        MaximumEventAgeInSeconds: 21600
-        MaximumRetryAttempts: 2
-      PackageType: Zip
-      Environment:
-        Variables:
-          REGION: us-east-2
-      Policies:
-      - Statement:
-        - Effect: Allow
-          Action:
-          - logs:CreateLogGroup
-          Resource: arn:aws:logs:us-east-2:559050208320:*
-        - Effect: Allow
-          Action:
-          - logs:CreateLogStream
-          - logs:PutLogEvents
-          Resource:
-          - arn:aws:logs:us-east-2:559050208320:log-group:/aws/lambda/rl-lambda-2025:*
-      - SSMParameterReadPolicy:
-          ParameterName:
-            Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/integraled/central/*
-      RecursiveLoop: Terminate
-      SnapStart:
-        ApplyOn: None
-      RuntimeManagementConfig:
-        UpdateRuntimeOn: Auto
-      Events:
-        ChatAPI:
-          Type: HttpApi
-          Properties:
-            Path: /chat
-            Method: POST
-            ApiId:
-              Ref: RecursiveLearningApi
-    Metadata:
-      SamResourceId: rllambda2025
   RecursiveLearningApi:
-    Type: AWS::Serverless::HttpApi
+    Type: AWS::ApiGatewayV2::Api
     Properties:
+      Name: RecursiveLearningApi
+      ProtocolType: HTTP
       CorsConfiguration:
+        AllowOrigins:
+        - https://recursivelearning.app
+        - https://app.recursivelearning.app
+        - https://admin.recursivelearning.app
+        - https://api.recursivelearning.app
         AllowMethods:
+        - GET
         - POST
         - OPTIONS
         AllowHeaders:
         - Content-Type
-        - X-Amz-Date
         - Authorization
-        - X-Api-Key
-        - X-Amz-Security-Token
-        AllowOrigins:
-        - '*'
         MaxAge: 300
+  RecursiveLearningApiDefaultStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId:
+        Ref: RecursiveLearningApi
+      StageName: $default
+  ChatRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId:
+        Ref: RecursiveLearningApi
+      RouteKey: POST /chat
+      Target:
+        Fn::Join:
+        - /
+        - - integrations
+          - Ref: ChatIntegration
+  ChatOptionsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId:
+        Ref: RecursiveLearningApi
+      RouteKey: OPTIONS /chat
+      Target:
+        Fn::Join:
+        - /
+        - - integrations
+          - Ref: ChatOptionsIntegration
+  ChatIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId:
+        Ref: RecursiveLearningApi
+      Description: Lambda integration for chat endpoint
+      IntegrationType: AWS_PROXY
+      IntegrationUri: arn:aws:lambda:us-east-2:559050208320:function:rl-lambda-2025
+      PayloadFormatVersion: 2.0
+  ChatOptionsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId:
+        Ref: RecursiveLearningApi
+      Description: CORS preflight integration
+      IntegrationType: MOCK
+      PayloadFormatVersion: 2.0
+      ResponseParameters:
+        method.response.header.Access-Control-Allow-Headers: '''Content-Type,Authorization'''
+        method.response.header.Access-Control-Allow-Methods: '''POST,OPTIONS'''
+        method.response.header.Access-Control-Allow-Origin: '''https://recursivelearning.app'''
+        method.response.header.Access-Control-Max-Age: '''300'''
+      ResponseTemplates:
+        application/json: '{"statusCode": 200}'
+  rllambda2025ChatAPIPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: rl-lambda-2025
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/*
 Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL
     Value:
-      Fn::Sub: https://${RecursiveLearningApi}.execute-api.${AWS::Region}.amazonaws.com/chat
+      Fn::Sub: https://${RecursiveLearningApi}.execute-api.${AWS::Region}.amazonaws.com/
+  LambdaArn:
+    Description: Lambda Function ARN
+    Value: arn:aws:lambda:us-east-2:559050208320:function:rl-lambda-2025
