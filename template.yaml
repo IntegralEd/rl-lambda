@@ -9,7 +9,9 @@ Resources:
       CorsConfiguration:
         AllowOrigins:
           - https://recursivelearning.app
-          - https://*.recursivelearning.app
+          - https://app.recursivelearning.app
+          - https://admin.recursivelearning.app
+          - https://api.recursivelearning.app
         AllowMethods:
           - GET
           - POST
