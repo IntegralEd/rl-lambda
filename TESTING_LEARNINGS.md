@@ -617,3 +617,39 @@ Our circular dependency issues were partly due to mixing concerns:
 3. Test POST endpoint
 4. Monitor performance
 5. Document results
+
+## Latest Deployment Learnings (April 2024)
+
+### Validation Error Fixes
+1. LoggingConfig Removal:
+   - Issue: LoggingConfig in Globals caused validation error
+   - Fix: Removed LoggingConfig block entirely
+   - Why: Not supported in AWS::Serverless::Function globals
+   - Note: Can be configured per function if needed
+
+2. CORS Configuration:
+   - Confirmed: HTTP API handles CORS automatically
+   - No need for ResponseParameters in MOCK integration
+   - CorsConfiguration in API definition is sufficient
+   - Simpler and more reliable approach
+
+### Next Test Steps
+1. Deploy updated template
+2. Test OPTIONS request:
+   ```bash
+   # Get API endpoint
+   API_ENDPOINT=$(aws cloudformation describe-stacks --stack-name rl-lambda-2025 --query 'Stacks[0].Outputs[?OutputKey==`RecursiveLearningApiEndpoint`].OutputValue' --output text)
+   
+   # Test OPTIONS request
+   curl -X OPTIONS ${API_ENDPOINT}chat \
+     -H "Origin: https://recursivelearning.app" \
+     -H "Access-Control-Request-Method: POST" \
+     -H "Access-Control-Request-Headers: Content-Type" \
+     -v
+   ```
+
+3. Expected Results:
+   - 200 OK response
+   - CORS headers present
+   - No Lambda invocation
+   - Headers set by HTTP API

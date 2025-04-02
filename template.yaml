@@ -10,8 +10,6 @@ Globals:
     Environment:
       Variables:
         NODE_ENV: production
-    LoggingConfig:
-      LogFormat: JSON
     Tracing: Active
     Tags:
       Project: RecursiveLearning
