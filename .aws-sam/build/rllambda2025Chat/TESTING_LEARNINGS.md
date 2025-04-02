@@ -679,3 +679,18 @@ Our circular dependency issues were partly due to mixing concerns:
 - Deploy updated Lambda and SAM template.
 - Execute unit tests to validate behavior.
 - Confirm functionality with manual tests using Postman or curl.
+
+## Deployment Issue & Resolution (April 2024)
+
+### Issue Encountered
+- Deployment failed due to unsupported replacement-type updates with rollback disabled.
+- Specifically affected resource: `rllambda2025ChatAPIPermission`.
+
+### Resolution Steps
+1. Rolled back the existing stack to ensure a clean state.
+2. Deleted the existing stack to avoid conflicts.
+3. Planned redeployment with rollback enabled ("prevent rollback" set to "N").
+
+### Next Steps
+- Redeploy the stack with rollback enabled.
+- Verify successful deployment and functionality.
