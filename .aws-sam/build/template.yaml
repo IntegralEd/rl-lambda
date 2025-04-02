@@ -27,7 +27,10 @@ Resources:
         - OPTIONS
         AllowHeaders:
         - Content-Type
+        - X-Amz-Date
         - Authorization
+        - X-Api-Key
+        - X-Amz-Security-Token
         MaxAge: 300
   RecursiveLearningApiDefaultStage:
     Type: AWS::ApiGatewayV2::Stage
