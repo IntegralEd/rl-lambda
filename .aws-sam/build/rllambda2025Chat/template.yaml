@@ -34,6 +34,11 @@ Resources:
           - Authorization
           - X-Api-Key
           - X-Amz-Security-Token
+        ExposeHeaders:
+          - Access-Control-Allow-Origin
+          - Access-Control-Allow-Methods
+          - Access-Control-Allow-Headers
+          - Access-Control-Max-Age
         MaxAge: 300
 
   RecursiveLearningApiDefaultStage:
