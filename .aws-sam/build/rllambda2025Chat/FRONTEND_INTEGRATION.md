@@ -6,11 +6,8 @@ https://e7mu4gwsvh.execute-api.us-east-2.amazonaws.com/chat
 ```
 
 ## CORS Configuration
-The API is configured to accept requests from the following origins:
+The API is configured to accept requests from the following origin:
 - https://recursivelearning.app
-- https://app.recursivelearning.app
-- https://admin.recursivelearning.app
-- https://api.recursivelearning.app
 
 ## Request Formats
 

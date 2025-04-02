@@ -214,3 +214,150 @@ Private backend service for Recursive Learning's context-aware learning manageme
 - CloudWatch Logs
 - Airtable LRS table for analytics
 - OpenAI usage tracking
+
+## 🎉 Successful Deployment (April 2024)
+
+### Unified AWS_PROXY Integration
+- Successfully deployed HTTP API Gateway with AWS_PROXY integration for both OPTIONS and POST requests.
+- Lambda function now handles OPTIONS preflight requests directly, simplifying CORS management.
+
+### Key Benefits
+- **Lower Latency and Cost:** Efficient HTTP API usage.
+- **Simplified Management:** Unified integration reduces complexity.
+- **Centralized Logic:** Easier maintenance and clearer routing logic.
+
+### Next Steps
+- Verify OPTIONS and POST requests functionality.
+- Document test results and continue monitoring performance.
+- Maintain clear documentation and update regularly based on learnings.
+
+## 🚀 Frontend-Backend Handshake Documentation (April 2024)
+
+### Endpoint Information
+
+**API Endpoint:**
+```
+POST https://c6qevynchf.execute-api.us-east-2.amazonaws.com/chat
+OPTIONS https://c6qevynchf.execute-api.us-east-2.amazonaws.com/chat
+```
+
+**Integration Type:** AWS_PROXY (Unified for both OPTIONS and POST)
+
+### ✅ Frontend Request Schema (JSON)
+
+```json
+{
+  "User_ID": "user_123",
+  "Org_ID": "org_456",
+  "Assistant_ID": "asst_789",
+  "Thread_ID": null,
+  "Source": "goalsetter_live",
+  "message": "Hello, assistant!"
+}
+```
+
+### Field Descriptions & Sensitivities:
+- **User_ID** *(required, string)*: Unique identifier for the user.
+- **Org_ID** *(required, string)*: Identifier for the user's organization.
+- **Assistant_ID** *(required, string)*: Identifier for the specific assistant.
+- **Thread_ID** *(optional, string or null)*: Conversation thread identifier; use `null` explicitly for new threads.
+- **Source** *(required, string)*: Origin of the request (e.g., `goalsetter_live`).
+- **message** *(required, string)*: User's message to the assistant.
+
+### ✅ Backend Response Schema (JSON)
+
+```json
+{
+  "message": "Assistant-generated response here",
+  "thread_id": "thread_101112",
+  "assistant_id": "asst_789"
+}
+```
+
+### 🔄 OPTIONS Request (CORS Preflight)
+
+Lambda directly handles OPTIONS requests, returning:
+```
+Access-Control-Allow-Origin: https://recursivelearning.app
+Access-Control-Allow-Methods: POST,OPTIONS
+Access-Control-Allow-Headers: Content-Type,Authorization
+Access-Control-Max-Age: 300
+```
+
+### 🛠️ Example Frontend Request (curl)
+
+```bash
+curl -X POST https://c6qevynchf.execute-api.us-east-2.amazonaws.com/chat \
+  -H "Origin: https://recursivelearning.app" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "User_ID": "user_123",
+    "Org_ID": "org_456",
+    "Assistant_ID": "asst_789",
+    "Thread_ID": null,
+    "Source": "goalsetter_live",
+    "message": "Hello, assistant!"
+  }' \
+  -v
+```
+
+### 🎯 Goalsetter Activity Example
+
+```json
+{
+  "User_ID": "teacher_001",
+  "Org_ID": "school_abc",
+  "Assistant_ID": "asst_goalsetter",
+  "Thread_ID": null,
+  "Source": "goalsetter_live",
+  "message": "I want to set goals for my 9th-grade algebra class."
+}
+```
+
+### 🧪 Suggested Unit Testing
+
+```yaml
+tests:
+  - name: "OPTIONS Request Test"
+    input:
+      httpMethod: "OPTIONS"
+      requestContext:
+        http:
+          method: "OPTIONS"
+    expectedOutput:
+      statusCode: 200
+      headers:
+        Access-Control-Allow-Origin: "https://recursivelearning.app"
+        Access-Control-Allow-Methods: "POST,OPTIONS"
+        Access-Control-Allow-Headers: "Content-Type,Authorization"
+        Access-Control-Max-Age: "300"
+      body: '{"message": "CORS preflight response"}'
+
+  - name: "POST Request Valid Payload Test"
+    input:
+      httpMethod: "POST"
+      body: '{"User_ID": "user123", "Org_ID": "org456", "Assistant_ID": "asst789", "Thread_ID": null, "Source": "goalsetter_live", "message": "Hello"}'
+      requestContext:
+        http:
+          method: "POST"
+    expectedOutput:
+      statusCode: 200
+      bodyContains: ["user123", "asst789", "Hello"]
+
+  - name: "POST Request Missing Required Fields Test"
+    input:
+      httpMethod: "POST"
+      body: '{"message": "Hello"}'
+      requestContext:
+        http:
+          method: "POST"
+    expectedOutput:
+      statusCode: 400
+      bodyContains: ["Missing required parameters"]
+```
+
+### ✅ Next Steps for Frontend Team:
+- Confirm frontend requests match the schema.
+- Verify OPTIONS preflight handling.
+- Coordinate initial integration testing.
+- Prepare for live assistant interactions post-testing.
