@@ -361,3 +361,14 @@ tests:
 - Verify OPTIONS preflight handling.
 - Coordinate initial integration testing.
 - Prepare for live assistant interactions post-testing.
+
+## API Gateway CORS Configuration
+
+This configuration ensures our HTTP API Gateway correctly forwards CORS headers to clients, even if our Lambda function does not include them in its response. Key points:
+
+- **Allowed Origins:** Only requests from `https://recursivelearning.app` are permitted.
+- **Allowed Methods:** Only `POST` and `OPTIONS` requests are allowed.
+- **Allowed Headers:** Must include `Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token`.
+- **Max Age:** Preflight requests are cached for 300 seconds to reduce network overhead.
+
+By setting these parameters in the API Gateway's `CorsConfiguration` block, we ensure OPTIONS (preflight) requests return the expected CORS headers, and all client requests are correctly validated and routed to our Lambda function. This maintains performance and cost benefits while providing full control over CORS behavior.
