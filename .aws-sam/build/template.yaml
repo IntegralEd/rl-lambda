@@ -46,6 +46,29 @@ Resources:
       ApiId:
         Ref: RecursiveLearningApi
       StageName: $default
+      AutoDeploy: true
+  rllambda2025Chat:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: rl-lambda-2025
+      Description: Recursive Learning Chat Lambda
+      CodeUri: rllambda2025Chat
+      Handler: index.handler
+      Policies:
+      - SSMParameterReadPolicy:
+          ParameterName: integraled/central/*
+      - CloudWatchLogsFullAccess
+    Metadata:
+      SamResourceId: rllambda2025Chat
+  rllambda2025ChatAPIPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Ref: rllambda2025Chat
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/*/chat
   ChatIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -84,7 +107,7 @@ Resources:
       Target:
         Fn::Join:
         - /
-        - - integrations/
+        - - integrations
           - Ref: ChatIntegration
   ChatOptionsRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -95,43 +118,8 @@ Resources:
       Target:
         Fn::Join:
         - /
-        - - integrations/
+        - - integrations
           - Ref: ChatOptionsIntegration
-  rllambda2025Chat:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: rl-lambda-2025
-      Description: Recursive Learning Chat Lambda
-      CodeUri: rllambda2025Chat
-      Handler: index.handler
-      Policies:
-      - SSMParameterReadPolicy:
-          ParameterName: integraled/central/*
-      - CloudWatchLogsFullAccess
-      - Statement:
-        - Effect: Allow
-          Action:
-          - lambda:InvokeFunction
-          Resource:
-            Fn::GetAtt:
-            - rllambda2025Chat
-            - Arn
-          Principal: apigateway.amazonaws.com
-          Condition:
-            StringEquals:
-              aws:SourceArn:
-                Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/*/chat
-    Metadata:
-      SamResourceId: rllambda2025Chat
-  rllambda2025ChatAPIPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName:
-        Ref: rllambda2025Chat
-      Principal: apigateway.amazonaws.com
-      SourceArn:
-        Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/*/chat
 Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL

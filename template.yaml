@@ -1,27 +1,21 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Recursive Learning Lambda Backend with CORS-enabled API Gateway
+Description: Serverless application for Recursive Learning's Lambda backend
 
 Globals:
   Function:
     Timeout: 180
     MemorySize: 256
     Runtime: nodejs18.x
-    Architectures:
-      - arm64
     Environment:
       Variables:
-        NODE_OPTIONS: --enable-source-maps
+        NODE_ENV: production
     LoggingConfig:
       LogFormat: JSON
-      LogRetentionInDays: 30
-      ApplicationLogLevel: INFO
-      SystemLogLevel: INFO
     Tracing: Active
     Tags:
-      Project: recursive-learning
-      Environment: production
-      Service: chat-backend
+      Project: RecursiveLearning
+      Environment: Production
 
 Resources:
   # 1. API Gateway Configuration
@@ -33,9 +27,6 @@ Resources:
       CorsConfiguration:
         AllowOrigins:
           - https://recursivelearning.app
-          - https://app.recursivelearning.app
-          - https://admin.recursivelearning.app
-          - https://api.recursivelearning.app
         AllowMethods:
           - POST
           - OPTIONS
@@ -55,21 +46,47 @@ Resources:
   rllambda2025Chat:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: rl-lambda-2025
-      Description: Recursive Learning Chat Lambda
-      CodeUri: .
+      CodeUri: ./
       Handler: index.handler
+      Role: !GetAtt rllambda2025ChatRole.Arn
+      Architectures:
+        - arm64
+      Environment:
+        Variables:
+          NODE_ENV: production
+      LoggingConfig:
+        LogFormat: JSON
+
+  rllambda2025ChatRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - SSMParameterReadPolicy:
-            ParameterName: integraled/central/*
-        - CloudWatchLogsFullAccess
+        - PolicyName: SSMParameterAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                Resource:
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/integraled/central/*
 
   # 3. Lambda Permission
   rllambda2025ChatAPIPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref rllambda2025Chat
+      FunctionName: !GetAtt rllambda2025Chat.Arn
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/*/chat
 
@@ -78,7 +95,6 @@ Resources:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref RecursiveLearningApi
-      Description: Chat endpoint integration
       IntegrationType: AWS_PROXY
       IntegrationUri: !GetAtt rllambda2025Chat.Arn
       PayloadFormatVersion: 2.0
@@ -88,14 +104,13 @@ Resources:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref RecursiveLearningApi
-      Description: CORS preflight integration
       IntegrationType: MOCK
       PayloadFormatVersion: 2.0
       ResponseParameters:
-        method.response.header.Access-Control-Allow-Headers: {"value": "Content-Type,Authorization"}
-        method.response.header.Access-Control-Allow-Methods: {"value": "POST,OPTIONS"}
-        method.response.header.Access-Control-Allow-Origin: {"value": "https://recursivelearning.app"}
-        method.response.header.Access-Control-Max-Age: {"value": "300"}
+        method.response.header.Access-Control-Allow-Origin: "'https://recursivelearning.app'"
+        method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+        method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        method.response.header.Access-Control-Max-Age: "'300'"
 
   # 6. Routes
   ChatRoute:
@@ -103,25 +118,22 @@ Resources:
     Properties:
       ApiId: !Ref RecursiveLearningApi
       RouteKey: POST /chat
-      Target: !Join 
-        - /
-        - - integrations
-          - !Ref ChatIntegration
+      Target: !Sub integrations/${ChatIntegration}
 
   ChatOptionsRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref RecursiveLearningApi
       RouteKey: OPTIONS /chat
-      Target: !Join 
-        - /
-        - - integrations
-          - !Ref ChatOptionsIntegration
+      Target: !Sub integrations/${ChatOptionsIntegration}
 
 Outputs:
-  ApiEndpoint:
+  RecursiveLearningApiEndpoint:
     Description: API Gateway endpoint URL
     Value: !Sub https://${RecursiveLearningApi}.execute-api.${AWS::Region}.amazonaws.com/
-  LambdaArn:
+  RecursiveLearningApiId:
+    Description: API Gateway ID
+    Value: !Ref RecursiveLearningApi
+  RecursiveLearningLambdaArn:
     Description: Lambda function ARN
     Value: !GetAtt rllambda2025Chat.Arn 

@@ -64,16 +64,37 @@
    - Verify error responses
    - Expected: Appropriate error codes
 
-### Next Test Queue
-1. OPTIONS Request Test:
+## Staged Testing Approach
+
+### Phase 1: MOCK Integration Test (Current)
+1. Deployment Process:
+   - Clean slate: Delete existing stack
+   - Verify deletion complete
+   - Build and deploy with guided setup
+   - Wait 10 seconds for resources to stabilize
+   - Test OPTIONS request
+
+2. Test Sequence:
    ```bash
+   # Cleanup
+   aws cloudformation delete-stack --stack-name rl-lambda-2025
+   aws cloudformation wait stack-delete-complete --stack-name rl-lambda-2025
+
+   # Deploy
+   sam build && sam deploy --guided
+
+   # Wait for stabilization
+   sleep 10
+
+   # Test OPTIONS
    curl -X OPTIONS $API_ENDPOINT/chat \
      -H "Origin: https://recursivelearning.app" \
      -H "Access-Control-Request-Method: POST" \
      -H "Access-Control-Request-Headers: Content-Type" \
      -v
    ```
-   Expected:
+
+3. Expected Results:
    - Status: 200 OK
    - Headers:
      ```
@@ -83,62 +104,12 @@
      Access-Control-Max-Age: 300
      ```
 
-2. POST Request Test:
-   ```bash
-   curl -X POST $API_ENDPOINT/chat \
-     -H "Origin: https://recursivelearning.app" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "User_ID": "test_user",
-       "Org_ID": "test_org",
-       "Assistant_ID": "asst_123",
-       "Thread_ID": "thread_456",
-       "Source": "goalsetter"
-     }' \
-     -v
-   ```
-   Expected:
-   - Status: 200 OK
-   - Body: Assistant-generated message
-
-3. Error Case Tests:
-   ```bash
-   # Invalid Origin
-   curl -X POST $API_ENDPOINT/chat \
-     -H "Origin: https://unauthorized-domain.com" \
-     -H "Content-Type: application/json" \
-     -d '{"message": "Test"}' \
-     -v
-
-   # Missing Fields
-   curl -X POST $API_ENDPOINT/chat \
-     -H "Origin: https://recursivelearning.app" \
-     -H "Content-Type: application/json" \
-     -d '{"message": "Test"}' \
-     -v
-   ```
-   Expected:
-   - Invalid Origin: CORS error
-   - Missing Fields: 400 Bad Request
-
-### Key Learnings from Architecture
-1. MOCK Integration Benefits:
-   - Faster preflight responses
-   - No Lambda costs for OPTIONS
-   - Simpler deployment
-   - Clear separation of concerns
-
-2. AWS_PROXY Integration Benefits:
-   - Direct Lambda integration
-   - Full request/response access
-   - Better error handling
-   - Proper logging
-
-3. Testing Improvements:
-   - Test each integration separately
-   - Verify CORS headers first
-   - Then test business logic
-   - Finally test error cases
+4. Success Criteria:
+   - Stack deploys successfully
+   - API Gateway is created
+   - OPTIONS request returns 200
+   - All CORS headers present
+   - No Lambda invocation needed
 
 ## Success Criteria
 1. All infrastructure deployments succeed
@@ -531,3 +502,46 @@ Our circular dependency issues were partly due to mixing concerns:
 3. Added monitoring setup
 4. Included success criteria
 5. Added troubleshooting guide 
+
+## Template Fixes & Learnings
+
+### ResponseParameters Format Fix
+1. Previous Format (Incorrect):
+   ```yaml
+   ResponseParameters:
+     method.response.header.Access-Control-Allow-Headers: {"value": "Content-Type,Authorization"}
+   ```
+
+2. Correct Format:
+   ```yaml
+   ResponseParameters:
+     method.response.header.Access-Control-Allow-Origin: "'https://recursivelearning.app'"
+     method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+     method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+     method.response.header.Access-Control-Max-Age: "'300'"
+   ```
+
+3. Key Changes:
+   - Removed `{"value": "..."}` format
+   - Added single quotes around values
+   - Direct string assignment
+   - Proper header formatting
+
+### Lambda LoggingConfig Fix
+1. Previous Format (Incorrect):
+   ```yaml
+   LoggingConfig:
+     LogFormat: JSON
+     LogRetentionInDays: 30
+   ```
+
+2. Correct Format:
+   ```yaml
+   LoggingConfig:
+     LogFormat: JSON
+   ```
+
+3. Key Changes:
+   - Removed unsupported properties
+   - Kept only LogFormat
+   - Simplified configuration
