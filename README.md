@@ -46,6 +46,32 @@ Private backend service for Recursive Learning's context-aware learning manageme
         +--------------------------------------------------------------+
 ```
 
+## AWS_PROXY Integration for OPTIONS and POST
+
+### Approach Overview
+- Using HTTP API Gateway with AWS_PROXY integration for both POST and OPTIONS requests.
+- Lambda function handles OPTIONS preflight requests, returning appropriate CORS headers.
+
+### Benefits
+- **Lower Latency and Cost:** HTTP API is faster and less expensive compared to REST API.
+- **Simpler Management:** Avoids complexity of MOCK integrations.
+- **Unified Logic:** Centralized request processing simplifies routing logic.
+
+### Implementation Changes
+- Lambda detects HTTP method and returns proper CORS response for OPTIONS.
+- Removed MOCK integration from SAM template; using Lambda proxy integration for all methods.
+- Lambda includes required CORS headers in responses.
+
+### Testing and Expected Behavior
+- **OPTIONS Requests:** Lambda returns 200 with CORS headers.
+- **POST Requests:** Lambda processes payload, routes requests, and returns structured JSON response.
+- **Error Handling:** Lambda returns descriptive errors for missing fields or internal issues.
+
+### Next Steps
+- Implement Lambda changes and redeploy.
+- Run unit tests to confirm behavior.
+- Verify OPTIONS and POST requests with tools like Postman or curl.
+
 ## Testing Strategy
 
 ### Phase 1: CORS Preflight (MOCK Integration)

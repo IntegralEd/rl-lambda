@@ -81,7 +81,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt rllambda2025Chat.Arn
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/POST/chat
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/*/chat
 
   # 4. POST Integration (AWS_PROXY)
   ChatIntegration:
@@ -92,15 +92,7 @@ Resources:
       IntegrationUri: !GetAtt rllambda2025Chat.Arn
       PayloadFormatVersion: 2.0
 
-  # 5. OPTIONS Integration (MOCK)
-  ChatOptionsIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref RecursiveLearningApi
-      IntegrationType: MOCK
-      PayloadFormatVersion: 2.0
-
-  # 6. Routes
+  # 5. Routes
   ChatRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -113,7 +105,7 @@ Resources:
     Properties:
       ApiId: !Ref RecursiveLearningApi
       RouteKey: OPTIONS /chat
-      Target: !Sub integrations/${ChatOptionsIntegration}
+      Target: !Sub integrations/${ChatIntegration}
 
 Outputs:
   RecursiveLearningApiEndpoint:

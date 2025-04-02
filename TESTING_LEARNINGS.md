@@ -653,3 +653,29 @@ Our circular dependency issues were partly due to mixing concerns:
    - CORS headers present
    - No Lambda invocation
    - Headers set by HTTP API
+
+## AWS_PROXY Integration for OPTIONS and POST (April 2024)
+
+### Approach Overview
+- Unified AWS_PROXY integration for both OPTIONS and POST requests.
+- Lambda function directly handles OPTIONS preflight requests.
+
+### Benefits
+- Lower latency and cost compared to REST API.
+- Simplified management without MOCK integrations.
+- Centralized logic for easier maintenance.
+
+### Implementation Details
+- Lambda detects HTTP method and returns appropriate CORS headers for OPTIONS.
+- Removed MOCK integration entirely from SAM template.
+- Ensured Lambda responses include necessary CORS headers.
+
+### Testing Plan
+- OPTIONS requests: Expect 200 response with correct CORS headers.
+- POST requests: Validate payload processing and structured JSON responses.
+- Error handling: Confirm descriptive error messages for missing fields or internal errors.
+
+### Next Steps
+- Deploy updated Lambda and SAM template.
+- Execute unit tests to validate behavior.
+- Confirm functionality with manual tests using Postman or curl.
