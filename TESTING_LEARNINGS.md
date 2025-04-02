@@ -545,3 +545,75 @@ Our circular dependency issues were partly due to mixing concerns:
    - Removed unsupported properties
    - Kept only LogFormat
    - Simplified configuration
+
+## OpenAI Team Insights (April 2024)
+
+### Key Strengths Validated ✅
+1. HTTP API Choice:
+   - Modern architecture
+   - Lower latency
+   - Cost-effective
+   - Better performance
+
+2. CORS Configuration:
+   - Using `CorsConfiguration` block (preferred approach)
+   - No need for manual response headers
+   - Handled automatically by HTTP API
+   - More reliable and maintainable
+
+3. Integration Types:
+   - AWS_PROXY for /chat (business logic)
+   - MOCK for OPTIONS (preflight)
+   - Clear separation of concerns
+   - Best practice implementation
+
+4. Security & Infrastructure:
+   - Minimal IAM policy for SSM access
+   - Decoupled IAM role for future tightening
+   - Proper logging and tracing config
+   - Production-ready environment variables
+
+### Critical Improvements Made 🔧
+1. Removed ResponseParameters from MOCK:
+   - Previous: Manually setting CORS headers
+   - Now: Letting HTTP API handle OPTIONS via CorsConfiguration
+   - Why: ResponseParameters only work with REST APIs
+   - Result: Cleaner, more reliable CORS handling
+
+2. Tightened Route Permissions:
+   - Previous: `/*/*/chat` (any method)
+   - Now: `/*/POST/chat` (POST only)
+   - Why: Principle of least privilege
+   - Result: Enhanced security
+
+3. Removed Redundant Environment Config:
+   - Previous: NODE_ENV in both Globals and Function
+   - Now: Only in Globals
+   - Why: DRY principle
+   - Result: Cleaner configuration
+
+### Architecture Benefits
+1. Cost Optimization:
+   - MOCK integration handles OPTIONS without Lambda
+   - Reduced Lambda invocations
+   - HTTP API is cheaper than REST API
+   - Efficient resource usage
+
+2. Performance:
+   - Lower latency with HTTP API
+   - No Lambda cold starts for OPTIONS
+   - Automatic CORS handling
+   - Optimized request flow
+
+3. Maintainability:
+   - Clear separation of concerns
+   - Standard AWS best practices
+   - Well-documented configuration
+   - Future-proof design
+
+### Next Steps
+1. Deploy updated template
+2. Verify CORS handling
+3. Test POST endpoint
+4. Monitor performance
+5. Document results

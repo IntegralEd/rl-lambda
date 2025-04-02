@@ -51,11 +51,6 @@ Resources:
       Role: !GetAtt rllambda2025ChatRole.Arn
       Architectures:
         - arm64
-      Environment:
-        Variables:
-          NODE_ENV: production
-      LoggingConfig:
-        LogFormat: JSON
 
   rllambda2025ChatRole:
     Type: AWS::IAM::Role
@@ -88,7 +83,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt rllambda2025Chat.Arn
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/*/chat
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RecursiveLearningApi}/*/POST/chat
 
   # 4. POST Integration (AWS_PROXY)
   ChatIntegration:
@@ -106,11 +101,6 @@ Resources:
       ApiId: !Ref RecursiveLearningApi
       IntegrationType: MOCK
       PayloadFormatVersion: 2.0
-      ResponseParameters:
-        method.response.header.Access-Control-Allow-Origin: "'https://recursivelearning.app'"
-        method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
-        method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
-        method.response.header.Access-Control-Max-Age: "'300'"
 
   # 6. Routes
   ChatRoute:
