@@ -100,6 +100,19 @@ Resources:
       IntegrationUri: !GetAtt rllambda2025Chat.Arn
       PayloadFormatVersion: 2.0
 
+  # 4.1. OPTIONS Integration (MOCK)
+  ChatOptionsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref RecursiveLearningApi
+      IntegrationType: MOCK
+      IntegrationMethod: OPTIONS
+      IntegrationResponseSelectionExpression: 200
+      ResponseParameters:
+        - Access-Control-Allow-Origin: "'https://recursivelearning.app'"
+        - Access-Control-Allow-Methods: "'OPTIONS,POST'"
+        - Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+
   # 5. Routes
   ChatRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -113,7 +126,7 @@ Resources:
     Properties:
       ApiId: !Ref RecursiveLearningApi
       RouteKey: OPTIONS /chat
-      Target: !Sub integrations/${ChatIntegration}
+      Target: !Sub integrations/${ChatOptionsIntegration}
 
 Outputs:
   RecursiveLearningApiEndpoint:

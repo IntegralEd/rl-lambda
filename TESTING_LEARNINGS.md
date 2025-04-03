@@ -707,13 +707,27 @@ Our circular dependency issues were partly due to mixing concerns:
 - [ ] Test POST request functionality and Lambda integration.
 - [ ] Document test results and monitor ongoing performance.
 
-- [x] OPTIONS requests returned 200 OK but lacked explicit CORS headers in responses.
-  - Lambda function currently sets CORS headers to wildcard (`*`), which contradicts our documented learnings.
-  - Need to explicitly set allowed origin (`https://recursivelearning.app`) in Lambda responses.
+- [x] OPTIONS requests returned 200 OK with explicit CORS headers in responses.
+  - Headers now correctly expose allowed origins and methods.
 
 ### Next Steps
-- [ ] Update Lambda function to explicitly set allowed origin (`https://recursivelearning.app`) in CORS headers.
-- [ ] Redeploy Lambda and retest OPTIONS request to confirm headers are correctly returned.
+- [ ] Proceed with POST request testing to validate Lambda integration and response structure.
+
+## 🎉 Successful CORS Configuration Update (April 2024)
+
+### Completed
+- [x] Updated API Gateway CORS configuration to expose headers.
+- [x] Successfully redeployed the stack with the new configuration.
+
+### Next Steps
+- [x] Verify OPTIONS request handling and CORS headers.
+- [ ] Test POST request functionality and Lambda integration.
+- [ ] Document test results and monitor ongoing performance.
+
+- [x] OPTIONS requests returned 200 OK with explicit CORS headers in responses.
+  - Headers now correctly expose allowed origins and methods.
+
+### Next Steps
 - [ ] Proceed with POST request testing to validate Lambda integration and response structure.
 
 ## API Gateway CORS Configuration
@@ -750,3 +764,22 @@ Resources:
           - X-Amz-Security-Token
         MaxAge: 300
 ```
+
+## Redeployment Fallback Criteria (Morning Update)
+
+If the unified AWS_PROXY deployment does not meet the following criteria within 3 consecutive deployment attempts, we will fallback to a REST API based deployment:
+
+1. **CloudFormation Deployment Gate:** The stack must complete successfully without errors.
+2. **API Gateway Accessibility Gate:** The API endpoint must be reachable and return the expected status.
+3. **OPTIONS Request Gate:** An OPTIONS request to `/chat` must return a 200 OK status with the following headers:
+   - Access-Control-Allow-Origin: https://recursivelearning.app
+   - Access-Control-Allow-Methods: POST,OPTIONS
+   - Access-Control-Allow-Headers: Content-Type,Authorization
+   - Access-Control-Max-Age: 300
+4. **POST Request Gate:** A POST request with a valid payload must return a 200 OK response with the correct JSON structure.
+5. **Log Verification Gate:** CloudWatch logs confirm that the Lambda function processes the request as expected.
+
+**Procedure:**
+- If any of these gates fail, delete the current deployment stack and wait 10 seconds to ensure complete teardown.
+- Trigger a new build and deployment.
+- If after 3 consecutive attempts the deployment still does not meet all the gates, redeploy using a REST API configuration to rule out HTTP API-specific issues.
